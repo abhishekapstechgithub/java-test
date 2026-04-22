@@ -1,0 +1,20 @@
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+
+# Node / React
+node_modules/
+frontend/build/
+
+# Environment secrets — NEVER commit
+.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Docker
+.dockerignore

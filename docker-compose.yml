@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+
+  # MySQL database
+  mysql:
+    image: mysql:8.0
+    container_name: taskmanager-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:-rootpass}
+      MYSQL_DATABASE: taskmanager
+      MYSQL_USER: ${DB_USER:-appuser}
+      MYSQL_PASSWORD: ${DB_PASS:-apppass}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - taskmanager-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Spring Boot backend
+  backend:
+    image: ${DOCKER_HUB_USER:-yourdockerhubuser}/taskmanager-backend:${IMAGE_TAG:-latest}
+    container_name: taskmanager-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_NAME: taskmanager
+      DB_USER: ${DB_USER:-appuser}
+      DB_PASS: ${DB_PASS:-apppass}
+    ports:
+      - "8080:8080"
+    networks:
+      - taskmanager-net
+
+  # React frontend served by Nginx
+  frontend:
+    image: ${DOCKER_HUB_USER:-yourdockerhubuser}/taskmanager-frontend:${IMAGE_TAG:-latest}
+    container_name: taskmanager-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    networks:
+      - taskmanager-net
+
+networks:
+  taskmanager-net:
+    driver: bridge
+
+volumes:
+  mysql_data:
